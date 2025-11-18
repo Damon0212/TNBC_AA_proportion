@@ -1,0 +1,20 @@
+cd /nobackup/sbcs/damon/AABCG_local_ancestry/Tractor
+
+conda env create -f /nobackup/sbcs/damon/AABCG_local_ancestry/Tractor_v_1_4/Tractor/conda_py3_tractor.yml
+conda activate py3_tractor
+
+while read i start end
+do
+
+for platform in Onco AABC ROOT AMBER WGS MEGA_Vandy MEGA_RP
+do
+
+bcftools view --force-samples -S Local_AABCG_ID_TNBC_control_25pct_${platform} ${platform}_chr${i}_${start}_${end}.vcf.gz | bcftools view -g ^miss -O z -o TNBC_control_${platform}_chr${i}_${start}_${end}.vcf.gz 
+
+python3 /nobackup/sbcs/damon/AABCG_local_ancestry/Tractor_v_1_4/Tractor/scripts/extract_tracts_flare.py \
+--vcf /nobackup/sbcs/damon/AABCG_local_ancestry/Tractor/TNBC_control_${platform}_chr${i}_${start}_${end}.vcf.gz \
+--num-ancs 2 \
+--output-dir /nobackup/sbcs/damon/AABCG_local_ancestry/Tractor/
+
+done
+done < loci_list
