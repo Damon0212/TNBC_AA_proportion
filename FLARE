@@ -1,0 +1,305 @@
+
+cd /nobackup/sbcs/damon/FLARE
+
+module load Java/1.8.0_92
+java -jar flare.jar ref=flare.ref.vcf.gz gt=flare.gt.vcf.gz map=flare.chr1.map ref-panel=flare.ref.panel out=flare.out
+
+/nobackup/sbcs/damon/AABCGS/1kg_phase3/VCF_hg38/
+/nobackup/sbcs/damon/AABCGS/1kg_phase3/bd38_map/genetic_map_hg38_withX.txt.gz
+
+sed 1d /nobackup/sbcs/damon/AABCGS/1kg_phase3/bd38_map/genetic_map_hg38_withX.txt > genetic_map_hg38_withX.txt 
+cd /nobackup/sbcs/damon/AABCGS/GWAS_Topmed/GWAS_NG/LD_score_regression
+awk '{if($1==22) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr22
+awk '{if($1==2) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr2
+awk '{if($1==3) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr3
+awk '{if($1==4) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr4
+awk '{if($1==5) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr5
+awk '{if($1==6) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr6
+awk '{if($1==7) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr7
+awk '{if($1==8) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr8
+awk '{if($1==9) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr9
+awk '{if($1==10) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr10
+awk '{if($1==11) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr11
+awk '{if($1==12) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr12
+awk '{if($1==13) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr13
+awk '{if($1==14) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr14
+awk '{if($1==15) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr15
+awk '{if($1==16) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr16
+awk '{if($1==17) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr17
+awk '{if($1==18) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr18
+awk '{if($1==19) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr19
+awk '{if($1==21) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr21
+awk '{if($1==20) print $2,$3,$4}' genetic_map_hg38_withX.txt  > genetic_map_hg38_chr20
+
+
+module load PLINK/1.9b_5.2
+for i in {1..21}
+do
+plink --bfile /gpfs52/nobackup/sbcs/damon/BioVU_EUR_HRC_Oct2022/BioVU_HRC_bd38_chr$i --maf 0.001 --make-bed --out EUR_bd38_chr$i
+plink --bfile /gpfs52/nobackup/sbcs/damon/EUR_ASN/Asian_MEGA_BC_control/MEGA_ASN_noncase_bd38_chr$i--maf 0.001  --make-bed --out ASN_bd38_chr$i
+plink --bfile /gpfs52/nobackup/sbcs/damon/AABCGS/RP_MEGA_rsq03/MEGA_RP_ctrl_nc_chr$i --maf 0.001 --make-bed --out AFR_bd38_chr$i
+
+plink --bfile EUR_bd38_chr$i --cm-map genetic_map_hg38_chr@ --make-bed --out EUR_bd38_map_chr$i
+plink --bfile ASN_bd38_chr$i --cm-map genetic_map_hg38_chr@ --make-bed --out ASN_bd38_map_chr$i
+plink --bfile AFR_bd38_chr$i --cm-map genetic_map_hg38_chr@ --make-bed --out AFR_bd38_map_chr$i
+
+done
+
+### The genetic map file is in  SHAPEIT-format:
+chr position COMBINED_rate(cM/Mb) Genetic_Map(cM)
+
+
+## the map file provided by FLARE group (plink.chr10.GRCh38.map) have format as:
+     chromosome (1-22, X, Y or 0 if unplaced)
+     rs# or snp identifier
+     Genetic distance (morgans)
+     Base-pair position (bp units)
+
+
+cd /nobackup/sbcs/damon/AABCG_local_ancestry
+
+cp /nobackup/sbcs/damon/AABCGS/Geno_character/1kg_3race_iid 1kg_3race_iid 
+
+grep -w -f <(awk '{print $2}' 1kg_3race_iid)  /panfs/accrepfs.vampire/nobackup/sbcs/damon/AABCGS/1kg_phase3/1kg_pop.txt > 1kg_3race_iid_pop
+
+#### Global estimation were estimated using CEU CHB YRI from 1kg
+
+     chromosome (1-22, X, Y or 0 if unplaced)
+     rs# or snp identifier
+     Genetic distance (morgans)
+     Base-pair position (bp units)
+
+
+(1) ref: reference VCF file 
+/nobackup/sbcs/damon/AABCGS/1kg_phase3/VCF_hg38/ALL.chr22_GRCh38.genotypes.20170504.vcf.gz
+1KG_bd38_EUR_EAS_AFR_nomissing_chr22.vcf.gz
+(2) ref-panel: 
+cp /panfs/accrepfs.vampire/nobackup/sbcs/damon/AABCGS/1kg_phase3/1kg_pop.txt  1kg_pop.txt 
+sed 1d 1kg_3race_iid_pop | awk '{print $2,$3}' > 1kg_CEU_CHB_YRI
+
+/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_EAS_AFR
+
+(3) gt : 
+/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/BAC_iCOGS/chr$i.dose.vcf.gz
+
+(4) map : 
+/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map
+
+java -jar flare.jar ref=flare.ref.vcf.gz gt=flare.gt.vcf.gz map=flare.chr1.map ref-panel=flare.ref.panel out=flare.out
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_EAS_AFR_nomissing_chr22.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/iCOGS_beagle_nochr_nomissing_chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_EAS_AFR out=flare_test.out 
+
+awk '{print "chr"$1,$2,$3,$4}' /nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map > /nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.addchr.map
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/BAC_iCOGS/chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.addchr.map out=iCOGS_beagle_chr22.dose
+
+#for i in {1..22} X Y MT
+for i in {1..22}
+do
+echo "chr$i $i" >> chr_name_conv.txt
+done
+
+tabix -p vcf iCOGS_beagle_chr22.dose.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt iCOGS_beagle_chr22.dose.vcf.gz |bcftools view -Oz -g ^miss > iCOGS_beagle_nochr_nomissing_chr22.dose.vcf.gz
+
+tabix -p vcf Schrodi_IL23_IL17_combined_RECAL_SNP_INDEL_variants.VA.chr$i.Minimac4.vcf.gz
+done
+
+
+module --show-hidden spider BCFtools/.1.6
+module load GCC/6.4.0-2.28
+module load BCFtools/.1.6
+
+module load  GCC/11.3.0 BCFtools/1.18
+
+bcftools view -q 0.01:minor flare_test_AFR_EUR_NAM.out.anc.vcf.gz |bcftools query -l |wc -l 
+bcftools view -q 0.01:minor flare_test.out.anc.vcf.gz |bcftools query -l |wc -l 
+
+
+###### Prepare 1KG reference vcf files, including super population for EUR, EAS, AFR; Exclude missing variant
+for i in {1..22}
+do
+#bcftools view --force-samples /nobackup/sbcs/damon/AABCGS/1kg_phase3/VCF_hg38/ALL.chr${i}_GRCh38.genotypes.20170504.vcf.gz -S 1KG_EUR_EAS_AFR_ID |bcftools view -O z -g ^miss > 1KG_bd38_EUR_EAS_AFR_nomissing_chr${i}.vcf.gz
+bcftools view --force-samples /nobackup/sbcs/damon/AABCGS/1kg_phase3/VCF_hg38/ALL.chr${i}_GRCh38.genotypes.20170504.vcf.gz -S 1KG_EUR_AFR_ID |bcftools view -Oz -g ^miss -q 0.005:minor > 1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz
+
+done
+
+####### Prepare AFR-EUR-NAM reference from Yun's group; make sure no missing variants remained
+for i in {1..22}
+do
+bcftools view -Oz -g ^miss /nobackup/sbcs/damon/AABCG_local_ancestry/Reference_NAM_AFR_EUR/rc-ns-ftp.its.unc.edu/jiawenChen/local_ans_pipeline/reference_vcf/hg38/ref_HGDP_NAM_1000G_AFR_EUR_MAF0.05_b38_nochrpre_chr$i.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Reference_NAM_AFR_EUR/AFR_EUR_NAM_5pct_chr$i.vcf.gz 
+done
+
+bcftools view -q 0.01:minor chr.all.vcf.gz 
+
+###### Phase the genotype array imputation files using Beagle; tabix the vcf file; recode the chromosome annotation from "chrN" to "N"; Exclude missing variant
+
+for i in {1..21}
+do
+awk '{print "chr"$1,$2,$3,$4}' /nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map > /nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map
+done
+
+module load Java/1.8.0_92
+for i in {1..22}
+do
+#iCOGS
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/BAC_iCOGS/chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=iCOGS_beagle_chr$i
+tabix -p vcf iCOGS_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt iCOGS_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss > iCOGS_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_EAS_AFR_nomissing_chr22.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/iCOGS_beagle_nochr_nomissing_chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_EAS_AFR out=flare_test.out 
+#java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/Reference_NAM_AFR_EUR/AFR_EUR_NAM_5pct_chr22.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/iCOGS_beagle_nochr_nomissing_chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/Reference_NAM_AFR_EUR/reference_map.txt out=flare_test_AFR_EUR_NAM.out 
+
+bcftools view -Oz -g ^miss -q 0.005:minor iCOGS_beagle_nochr_nomissing_chr22.dose.vcf.gz > iCOGS_beagle_nochr_nomissing_halfpct_chr22.dose.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr22.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/iCOGS_beagle_nochr_nomissing_halfpct_chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=flare_test_twoway.out 
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar probs=TRUE array=true ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr22.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/iCOGS_beagle_nochr_nomissing_halfpct_chr22.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr22.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=flare_test_twoway_prob.out 
+bcftools query -f '%POS\n' flare_test_twoway_prob.out.anc.vcf.gz|wc -l
+bcftools query -f '%POS\n' flare_test_twoway.out.anc.vcf.gz|wc -l
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_Vandy_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_Vandy.chr$i
+
+
+module load  StdEnv/2023 java/21.0.1
+
+#MEGA_VANDY
+bcftools view --include ID==@/nobackup/sbcs/damon/AABCGS/GWAS_Topmed/rsq3_MEGA1_chr$i /data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/MEGA_07_2021/AABCGS_MEGA_07_2021/chr$i.dose.vcf.gz -Oz -g ^miss -q 0.005:minor > MEGA_VANDY_working_chr$i.vcf.gz
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=MEGA_VANDY_working_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=MEGA_Vandy_beagle_chr$i
+tabix -p vcf MEGA_Vandy_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt MEGA_Vandy_beagle_chr$i.vcf.gz -Oz > MEGA_Vandy_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_Vandy_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_Vandy.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_MEGA_Vandy.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_Vandy_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_Vandy.chr$i
+
+#MEGA_RP
+bcftools view --include ID==@/nobackup/sbcs/damon/AABCGS/GWAS_Topmed/rsq3_MEGA_RP_chr$i /data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/MEGA_07_2021/Yao_MEGA_FINAL/chr$i.dose.vcf.gz -Oz > MEGA_RP_working_chr$i.vcf.gz
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=MEGA_RP_working_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=MEGA_RP_beagle_chr$i
+tabix -p vcf MEGA_RP_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt MEGA_RP_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss -q 0.005:minor > MEGA_RP_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_RP_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_RP.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_MEGA_RP.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_RP_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_RP.chr$i
+
+
+
+#MEGA_USC
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/USC_MEGA/Geno_MEGA_USC_AAID_rsq_Filter_dot3_chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=MEGA_USC_beagle_chr$i
+tabix -p vcf MEGA_USC_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt MEGA_USC_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss -q 0.005:minor  > MEGA_USC_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_USC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_USC.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_MEGA_USC.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_USC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_MEGA_USC.chr$i
+
+#AMBER
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/AMBER/AMBER_TOPMed_Imputed_mafGT0.001_rsqGT0.3_chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=AMBER_beagle_chr$i
+tabix -p vcf AMBER_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt AMBER_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss  -q 0.005:minor > AMBER_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AMBER_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_AMBER.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_AMBER.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AMBER_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_AMBER.chr$i
+
+#ROOT
+bcftools view --include ID==@/nobackup/sbcs/damon/AABCGS/GWAS_Topmed/rsq3_MEGA1_chr$i /data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/ROOT/chr$i.dose.vcf.gz -Oz > ROOT_working_chr$i.vcf.gz
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=ROOT_working_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=ROOT_beagle_chr$i
+tabix -p vcf ROOT_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt ROOT_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss  -q 0.005:minor > ROOT_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/ROOT_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_ROOT.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_ROOT.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/ROOT_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_ROOT.chr$i
+
+
+#AABC
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/USC_AABC_07_2021/Geno_AABC_USC_AAID_rsq_Filter_dot3_chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=AABC_beagle_chr$i
+tabix -p vcf AABC_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt AABC_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss  -q 0.005:minor > AABC_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AABC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_AABC.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_AABC.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AABC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_AABC.chr$i
+
+#GBHS
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/GBHS/TOPMed/GBHS_TOPMed_Imputed_mafGT0.001_rsqGT0.3_chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=GBHS_beagle_chr$i
+tabix -p vcf GBHS_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt GBHS_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss  -q 0.005:minor > GBHS_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/GBHS_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_GBHS.chr$i
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_GBHS.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/GBHS_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_GBHS.chr$i
+
+#OncoArray
+java -jar /nobackup/sbcs/damon/FLARE/beagle.22Jul22.46e.jar gt=/data/sbcs/data/genetic_data/Individual_data/AABCGS/TOPMed_imputed/imputation/BAC_OncoArray/BCAC_OncoArray_TOPMed_Imputed_mafGT0.001_rsqGT0.3_chr$i.dose.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.addchr.map out=Onco_beagle_chr$i
+tabix -p vcf Onco_beagle_chr$i.vcf.gz 
+bcftools annotate --rename-chrs chr_name_conv.txt Onco_beagle_chr$i.vcf.gz |bcftools view -Oz -g ^miss -q 0.005:minor  > Onco_beagle_nochr_nomissing_chr$i.vcf.gz
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/Onco_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_Onco.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true model=FLARE_Onco.chr1.model ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/Onco_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_Onco.chr$i
+
+
+done
+
+
+####### Recode multi allelic variants in 1kg
+module load StdEnv/2023  gcc/12.3 bcftools/1.18
+cd /nobackup/sbcs/damon/AABCG_local_ancestry/
+for i in 2
+do 
+
+bcftools norm /nobackup/sbcs/damon/AABCGS/1kg_phase3/VCF_hg38/ALL.chr${i}_GRCh38.genotypes.20170504.vcf.gz -m -both |bcftools view -Oz -g ^miss -q 0.005:minor > 1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz
+done
+
+bcftools query -f '%POS\n' 1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr2.vcf.gz | grep -w 118823485
+bcftools query -f '%POS\n' FLARE_bi_MEGA_Vandy.chr2.anc.vcf.gz | grep -w 118823485
+
+
+module load StdEnv/2020 java/1.8.0_192
+
+module load  StdEnv/2023 java/21.0.1
+
+ 
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_Vandy_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_MEGA_Vandy.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_RP_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_MEGA_RP.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/MEGA_USC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_MEGA_USC.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/ROOT_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_ROOT.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AMBER_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_AMBER.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AABC_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_AABC.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/Onco_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_Onco.chr$i
+
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar array=true  ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/Onco_beagle_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_Onco.chr$i
+
+java -jar -Xmx200g /nobackup/sbcs/damon/FLARE/flare.jar min-mac=10 ref=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_bd38_EUR_AFR_bi_nomissing_halfpct_chr${i}.vcf.gz gt=/nobackup/sbcs/damon/AABCG_local_ancestry/AABCG_WGS_nochr_nomissing_chr$i.vcf.gz map=/nobackup/sbcs/damon/FLARE/plink.chr$i.GRCh38.map ref-panel=/nobackup/sbcs/damon/AABCG_local_ancestry/1KG_EUR_AFR_panel out=FLARE_bi_WGS.chr$i
+
+
+
+
+module load StdEnv/2023  gcc/12.3 bcftools/1.18
+for i in 2
+do
+bcftools reheader -s WGS_vcf_IDlink FLARE_bi_WGS.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_WGS_AABCGID.chr$i.anc.vcf.gz
+
+
+bcftools reheader -s MEGA_vcf_IDlink FLARE_bi_MEGA_Vandy.chr$i.anc.vcf.gz > FLARE_bi_MEGA_Vandy_rehead.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_MEGA_Vandy_rehead.chr$i.anc.vcf.gz
+bcftools view -S MEGA_vcf_AABCGID -Oz FLARE_bi_MEGA_Vandy_rehead.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_MEGA_Vandy_AABCGID.chr$i.anc.vcf.gz
+
+bcftools reheader -s MEGA2_vcf_IDlink  FLARE_bi_MEGA_RP.chr$i.anc.vcf.gz  > FLARE_bi_MEGA_RP_rehead.chr$i.anc.vcf.gz
+tabix -p vcf  FLARE_bi_MEGA_RP_rehead.chr$i.anc.vcf.gz
+bcftools view -S MEGA2_vcf_AABCGID -Oz  FLARE_bi_MEGA_RP_rehead.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_MEGA_RP_AABCGID.chr$i.anc.vcf.gz
+
+bcftools reheader -s MEGA3_vcf_IDlink FLARE_bi_MEGA_USC.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_MEGA_USC_AABCGID.chr$i.anc.vcf.gz
+
+bcftools reheader -s AMBER_vcf_IDlink FLARE_bi_AMBER.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_AMBER_AABCGID.chr$i.anc.vcf.gz
+
+cp FLARE_bi_ROOT.chr$i.anc.vcf.gz /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_ROOT_AABCGID.chr$i.anc.vcf.gz
+
+bcftools reheader -s AABC_vcf_IDlink FLARE_bi_AABC.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_AABC_AABCGID.chr$i.anc.vcf.gz
+
+bcftools reheader -s Onco_vcf_IDlink FLARE_bi_Onco.chr$i.anc.vcf.gz > /nobackup/sbcs/damon/AABCG_local_ancestry/Local_ancestry_vcf/FLARE_bi_Onco_AABCGID.chr$i.anc.vcf.gz
+
+done
+
+for i in 2
+do
+tabix -p vcf FLARE_bi_WGS_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_MEGA_Vandy_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_MEGA_RP_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_MEGA_USC_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_AMBER_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_ROOT_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_AABC_AABCGID.chr$i.anc.vcf.gz
+tabix -p vcf FLARE_bi_Onco_AABCGID.chr$i.anc.vcf.gz
+done
