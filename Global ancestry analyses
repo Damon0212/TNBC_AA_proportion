@@ -1,0 +1,144 @@
+library(dplyr)
+library(rms)
+library(table1)
+library(meta)
+library(metasens)
+library('fastDummies')
+
+global<-read.csv("Global.csv",head=T)
+global<-global[global$Two.way.AFR>0.25,]
+global$array_study <- paste(global$Study,global$Platform,sep="_")
+aggregate(Two.way.AFR ~ as.factor(array_study) , data = global, summary)
+
+global<-global[!global$Study %in% c("GBHS","NBCS","WAABCS"),] # African samples; majority have AA proportion >90%
+aggregate(Two.way.AFR ~ as.factor(array_study) , data = global, summary)
+
+array_study_list <- unique(global$array_study)
+study_list <- unique(global$Study)
+
+#MEGA_matched_control <- c("NBHS_MEGA","STSBHS_MEGA","MDABCS_MEGA","NC-BCFR_MEGA")
+MEGA_matched_control <- c("NBHS_MEGA","STSBHS_MEGA","MDABCS_MEGA","NC-BCFR_MEGA","MEC_MEGA")
+global$TNBC_control <- rep(NA,nrow(global))
+global[global$Status==1 & global$ER==2 & global$PR==2 & global$HER2==2,]$TNBC_control <- 1
+global[global$Status==2 & !global$array_study %in% MEGA_matched_control,]$TNBC_control <- 0
+aggregate(as.factor(TNBC_control) ~ Study, data = global, summary)
+#aggregate(as.factor(TNBC_control) ~ array_study, data = global, summary)
+summary1 <- aggregate(as.factor(TNBC_control) ~ Study, data = global[global$TNBC_control==1,], summary)
+summary2 <- aggregate(as.factor(TNBC_control) ~ Study, data = global[global$TNBC_control==0,], summary)
+list1 <- summary1[summary1$`as.factor(TNBC_control)`>=20,]$Study
+list2 <- summary2[summary2$`as.factor(TNBC_control)`>=20,]$Study
+list_TNBC_control <- study_list[study_list%in% list1 & study_list %in% list2]
+global$TNBC_control_final <- global$TNBC_control
+global[!global$Study %in% list_TNBC_control,]$TNBC_control_final <- NA
+describe(as.factor(global$TNBC_control_final) )
+aggregate(as.factor(TNBC_control_final) ~ Study, data = global[!is.na(global$TNBC_control_final),], summary)
+aggregate(as.factor(TNBC_control_final) ~ array_study, data = global[!is.na(global$TNBC_control_final),], summary)
+
+
+global$TNBC_ERpos <- rep(NA,nrow(global))
+global[global$Status==1 & global$ER==2 & global$PR==2 & global$HER2==2,]$TNBC_ERpos <- 1
+global[global$Status==1 & global$ER==1,]$TNBC_ERpos <- 0
+aggregate(as.factor(TNBC_ERpos) ~ Study, data = global, summary)
+summary1 <- aggregate(as.factor(TNBC_ERpos) ~ Study, data = global[global$TNBC_ERpos==1,], summary)
+summary2 <- aggregate(as.factor(TNBC_ERpos) ~ Study, data = global[global$TNBC_ERpos==0,], summary)
+list1 <- summary1[summary1$`as.factor(TNBC_ERpos)`>=20,]$Study
+list2 <- summary2[summary2$`as.factor(TNBC_ERpos)`>=20,]$Study
+list_TNBC_ERpos <- study_list[study_list%in% list1 & study_list %in% list2]
+global$TNBC_ERpos_final <- global$TNBC_ERpos
+global[!global$Study %in% list_TNBC_ERpos,]$TNBC_ERpos_final <- NA
+describe(as.factor(global$TNBC_ERpos_final) )
+aggregate(as.factor(TNBC_ERpos_final) ~ Study, data = global[!is.na(global$TNBC_ERpos_final),], summary)
+aggregate(as.factor(TNBC_ERpos_final) ~ array_study, data = global[!is.na(global$TNBC_ERpos_final),], summary)
+
+global$Two.way.AFR.10pct <- global$Two.way.AFR/0.1
+
+global_final<-left_join(global,PRS,by=c("AABCGS_ID"="AABCGID"),suffix=c("",".y"))
+
+#### Winsorization / percentile capping
+
+global_final$Two.way.AFR.10pct.cap <- global_final$Two.way.AFR.10pct
+global_final[global_final$Two.way.AFR.10pct<5.5,]$Two.way.AFR.10pct.cap <-5.5
+
+global_final$Two.way.AFR.cap <- global_final$Two.way.AFR
+global_final[global_final$Two.way.AFR<0.548,]$Two.way.AFR.cap <-0.548
+
+
+cutps.new <- c(5.5,6.5,7.5,8,8.5,9,9.5)
+global_final$Two.way.AFR.10pct.cat<-cut(global_final$Two.way.AFR.10pct,breaks=c(min(global_final$Two.way.AFR.10pct),cutps.new,max(global_final$Two.way.AFR.10pct)),include.lowest=T)
+global_final$Two.way.AFR.10pct.cat<-relevel(global_final$Two.way.AFR.10pct.cat,"(5.5,6.5]")
+#global_final$Two.way.AFR.10pct.cat<-relevel(global_final$Two.way.AFR.10pct.cat,"(6.5,7.5]")
+global_final[global_final$Two.way.AFR<0.548,]$Two.way.AFR.cap <-0.548
+global_final$Two.way.AFR.10pct.cap<-global_final$Two.way.AFR.cap*10
+aggregate(as.factor(TNBC_ERpos_final) ~ Two.way.AFR.10pct.cat, data = global_final, summary)
+aggregate(as.factor(TNBC_control_final) ~ Two.way.AFR.10pct.cat, data = global_final, summary)
+
+ROW.K=2
+temp<-NULL
+for (data.working in study_list_TNBC_ERpos){
+  print(data.working)
+  fit.working <- glm(TNBC_ERpos_final ~ 
+                       #Two.way.AFR.10pct.cat + 
+                       Two.way.AFR.10pct.cap +
+                       #as.numeric(Two.way.AFR.10pct.cat) + 
+                       #PRS13_std +
+                       as.factor(BMI_cat) + as.factor(NumberLB_cat) + as.factor(Breastfed) + as.factor(Menopause_combined) + as.factor(Age1stLB_recoded) + as.factor(Menarche) +
+                       PC2.all + PC3.all + PC4.all + PC5.all +
+                       Age_GWAS ,family=binomial(link='logit'),data=global_final[global_final$Study==data.working & !is.na(global_final$TNBC_ERpos_final) ,])
+  
+  summary.working <- summary(fit.working)
+  results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients[ROW.K,1],se=summary.working$coefficients[ROW.K,2],zscore=summary.working$coefficients[ROW.K,3],pvalue=summary.working$coefficients[ROW.K,4])
+  temp<-rbind(temp,results.working)
+}
+
+temp2<-NULL
+for (data.working in c('CARE')){
+  print(data.working)
+  fit.working <- glm(TNBC_ERpos_final ~ 
+                       #Two.way.AFR.10pct.cat +
+                       Two.way.AFR.10pct.cap +
+                       #as.numeric(Two.way.AFR.10pct.cat) + 
+                       #PRS13_std +
+                       as.factor(BMI_cat) + as.factor(NumberLB_cat) + as.factor(Breastfed) +
+                       PC2.all + PC3.all + PC4.all + PC5.all +
+                       Age_GWAS ,family=binomial(link='logit'),data=global_final[global_final$Study==data.working & !is.na(global_final$TNBC_ERpos_final)  ,])
+  summary.working <- summary(fit.working)
+  results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients[ROW.K,1],se=summary.working$coefficients[ROW.K,2],zscore=summary.working$coefficients[ROW.K,3],pvalue=summary.working$coefficients[ROW.K,4])
+  
+  #  results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients["Two.way.AFR.10pct",1],se=summary.working$coefficients["Two.way.AFR.10pct",2],zscore=summary.working$coefficients["Two.way.AFR.10pct",3],pvalue=summary.working$coefficients["Two.way.AFR.10pct",4])
+  #   results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients["PRS3_std",1],se=summary.working$coefficients["PRS3_std",2],zscore=summary.working$coefficients["PRS3_std",3],pvalue=summary.working$coefficients["PRS3_std",4])
+  temp2<-rbind(temp2,results.working)
+}
+
+
+temp3<-NULL
+for (data.working in c('MDABCS')){
+  print(data.working)
+  fit.working <- glm(TNBC_ERpos_final ~ 
+                       #Two.way.AFR.10pct.cat +
+                       Two.way.AFR.10pct.cap +
+                       #as.numeric(Two.way.AFR.10pct.cat) + 
+                       #PRS13_std +
+                       as.factor(BMI_cat)  + as.factor(Breastfed) + as.factor(Menopause_combined) + as.factor(Age1stLB_recoded) + as.factor(Menarche) +
+                       PC2.all + PC3.all + PC4.all + PC5.all + 
+                       Age_GWAS ,family=binomial(link='logit'),data=global_final[global_final$Study==data.working & !is.na(global_final$TNBC_ERpos_final)  ,])
+  #  fit.working$coefficients["Two.way.AFR.10pct"]
+  summary.working <- summary(fit.working)
+  results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients[ROW.K,1],se=summary.working$coefficients[ROW.K,2],zscore=summary.working$coefficients[ROW.K,3],pvalue=summary.working$coefficients[ROW.K,4])
+  
+  #  results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients["Two.way.AFR.10pct",1],se=summary.working$coefficients["Two.way.AFR.10pct",2],zscore=summary.working$coefficients["Two.way.AFR.10pct",3],pvalue=summary.working$coefficients["Two.way.AFR.10pct",4])
+  #   results.working <- data.frame(dataset=data.working, beta=summary.working$coefficients["PRS3_std",1],se=summary.working$coefficients["PRS3_std",2],zscore=summary.working$coefficients["PRS3_std",3],pvalue=summary.working$coefficients["PRS3_std",4])
+  temp3<-rbind(temp3,results.working)
+}
+
+temp<-rbind(temp,temp2,temp3)
+temp <- temp[order(temp$dataset),]
+#temp <- temp[!temp$dataset %in% c("MDABCS", "CARE", "STSBHS", "NBHS" ),]
+Meta.temp <- metagen(TE=beta,seTE=se,studlab =dataset,data=temp)
+
+summary(Meta.temp)
+round(exp(c(Meta.temp$TE.common,Meta.temp$lower.common,Meta.temp$upper.common)),2)
+2*pnorm(abs(Meta.temp$statistic.fixed), lower.tail = F)
+
+Meta.temp <- metagen(TE=beta,seTE=se,studlab =dataset,data=temp,sm="OR")
+meta:::forest.meta(Meta.temp,leftcols=c("studlab"),at = c(0.5, 0.8,1, 1.25, 2))
+
